@@ -1,0 +1,2649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Bites - Order & Payment System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Merriweather:wght@700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --food-saffron: #f59e0b;
+            --food-tomato: #ef4444;
+            --food-coriander: #16a34a;
+            --food-cream: #fff7ed;
+            --food-ink: #2b2118;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: 
+                radial-gradient(circle at 10% 0%, rgba(245, 158, 11, 0.16), transparent 35%),
+                radial-gradient(circle at 90% 10%, rgba(239, 68, 68, 0.12), transparent 30%),
+                radial-gradient(circle at 30% 90%, rgba(22, 163, 74, 0.1), transparent 30%),
+                linear-gradient(180deg, #fffaf3 0%, #fffdf9 45%, #fff7ed 100%);
+            min-height: 100vh;
+            color: var(--food-ink);
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Merriweather', serif;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            border-bottom: 1px solid #fed7aa;
+        }
+
+        .nav-container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 64px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #f97316, #ea580c);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 20px;
+        }
+
+        .logo-text {
+            font-family: 'Merriweather', serif;
+            font-size: 1.25rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, #ea580c, #c2410c);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: #57534e;
+            transition: color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            cursor: pointer;
+        }
+
+        .nav-link:hover {
+            color: #f97316;
+        }
+
+        .cart-badge {
+            position: relative;
+        }
+
+        .cart-count {
+            position: absolute;
+            top: -8px;
+            right: -12px;
+            background: #f97316;
+            color: white;
+            font-size: 10px;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .btn-primary {
+            background: #f97316;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #ea580c;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid #f97316;
+            color: #f97316;
+        }
+
+        .btn-outline:hover {
+            background: #f97316;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid #ffedd5;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: transform 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+        }
+
+        .card-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #ffedd5;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        .card-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #ffedd5;
+            background: rgba(255, 237, 213, 0.3);
+        }
+
+        .grid {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #44403c;
+            margin-bottom: 0.25rem;
+        }
+
+        .form-input, .form-select {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #fed7aa;
+            border-radius: 0.5rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus, .form-select:focus {
+            border-color: #f97316;
+            outline: 2px solid rgba(249, 115, 22, 0.2);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 1rem;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .food-card-img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            transition: transform 0.3s;
+        }
+
+        .food-card:hover .food-card-img {
+            transform: scale(1.05);
+        }
+
+        .veg-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            background: #10b981;
+            color: white;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+        }
+
+        .nonveg-badge {
+            background: #ef4444;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            color: white;
+            z-index: 1100;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        .toast-success {
+            background: #10b981;
+        }
+
+        .toast-error {
+            background: #ef4444;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 1rem;
+            text-align: center;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 0.75rem;
+            background: #fff7ed;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 0.75rem;
+            border-bottom: 1px solid #ffedd5;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+        }
+
+        .status-pending { background: #fef3c7; color: #92400e; }
+        .status-confirmed { background: #dbeafe; color: #1e40af; }
+        .status-preparing { background: #e9d5ff; color: #6b21a5; }
+        .status-ready { background: #d1fae5; color: #065f46; }
+        .status-completed { background: #f3f4f6; color: #374151; }
+
+        .hidden {
+            display: none;
+        }
+
+        .payment-option-active {
+            background: #f97316 !important;
+            color: white !important;
+        }
+
+        .upi-qr-card {
+            display: none;
+            background: #111827;
+            color: white;
+            border-radius: 1rem;
+            padding: 1rem;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .upi-qr-card.active {
+            display: block;
+        }
+
+        .upi-qr-image {
+            width: 220px;
+            height: 220px;
+            max-width: 100%;
+            border-radius: 0.75rem;
+            background: white;
+            padding: 0.5rem;
+            margin: 0.75rem auto;
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+            .grid-3, .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+
+    <!-- Razorpay Payment Gateway -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+    <script>
+        // ============================================================
+        // CONFIGURATION - UPDATE THESE SETTINGS
+        // ============================================================
+        
+        // Supabase Configuration - REPLACE WITH YOUR ACTUAL KEYS
+        const SUPABASE_URL = 'https://mecnrhnfthulhclouoxd.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_bxbdGvLmiVJaXNa1H4EJLg_Hkg1ZBCt';
+        
+        // Payment Backend URL - UPDATE THIS TO YOUR SERVER URL
+        // For local development: http://localhost:5000
+        // For production: https://your-backend-domain.com
+        const PAYMENT_BACKEND_URL = 'http://localhost:5000';
+        const ENABLE_SINGLE_FILE_PAYMENT_FALLBACK = true;
+        
+        // Razorpay Key ID - GET THIS FROM https://dashboard.razorpay.com/app/keys
+        const RAZORPAY_KEY_ID = 'rzp_test_SbIrvTj9QUUxaL';
+        
+        // ============================================================
+        
+        // Create client
+        const _supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // App State
+        let currentUser = null;
+        let currentProfile = null;
+        let currentRole = null;
+        let cartItems = [];
+        let menuItems = [];
+        
+        const app = document.getElementById('app');
+        
+        // Helper Functions
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+        
+        function formatPrice(price) {
+            return `₹${price}`;
+        }
+
+        const DEFAULT_MENU_IMAGE = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&h=400&fit=crop';
+
+        function normalizeImageUrl(value) {
+            const raw = String(value || '').trim();
+            if (!raw) return '';
+
+            const lowered = raw.toLowerCase();
+            if (lowered === 'null' || lowered === 'undefined' || lowered === 'n/a' || lowered === 'na' || lowered === '-') {
+                return '';
+            }
+
+            if (raw.startsWith('www.')) {
+                return `https://${raw}`;
+            }
+
+            if (raw.startsWith('//')) {
+                return `https:${raw}`;
+            }
+
+            const driveMatch = raw.match(/drive\.google\.com\/file\/d\/([^/]+)/i);
+            if (driveMatch && driveMatch[1]) {
+                return `https://drive.google.com/uc?export=view&id=${driveMatch[1]}`;
+            }
+
+            return raw;
+        }
+
+        function escapeHtmlAttr(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;');
+        }
+
+        function getProxiedImageUrl(url) {
+            const cleaned = String(url || '').replace(/^https?:\/\//i, '');
+            return `https://images.weserv.nl/?url=${encodeURIComponent(cleaned)}`;
+        }
+
+        function getAltProxiedImageUrl(url) {
+            return `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+        }
+
+        function getMenuImageUrl(value) {
+            const directUrl = normalizeImageUrl(value);
+            if (!directUrl) return DEFAULT_MENU_IMAGE;
+
+            if (/^https?:\/\//i.test(directUrl)) {
+                return getProxiedImageUrl(directUrl);
+            }
+
+            return directUrl;
+        }
+
+        function handleMenuImageError(imgElement) {
+            if (!imgElement) return;
+
+            const directSrc = imgElement.getAttribute('data-direct-src') || '';
+            const altProxySrc = imgElement.getAttribute('data-alt-proxy-src') || '';
+            const retryStep = Number(imgElement.getAttribute('data-retry-step') || '0');
+
+            if (retryStep === 0 && directSrc) {
+                imgElement.setAttribute('data-retry-step', '1');
+                imgElement.src = directSrc;
+                return;
+            }
+
+            if (retryStep === 1 && altProxySrc) {
+                imgElement.setAttribute('data-retry-step', '2');
+                imgElement.src = altProxySrc;
+                return;
+            }
+
+            imgElement.onerror = null;
+            imgElement.src = DEFAULT_MENU_IMAGE;
+        }
+
+        window.handleMenuImageError = handleMenuImageError;
+        
+        async function fetchUserRole(userId) {
+            const { data, error } = await _supabaseClient
+                .from('profiles')
+                .select('role')
+                .eq('id', userId)
+                .maybeSingle();
+            
+            if (!error && data) {
+                currentRole = data.role;
+            }
+            return currentRole;
+        }
+
+        async function fetchUserProfile(userId) {
+            const { data, error } = await _supabaseClient
+                .from('profiles')
+                .select('name, email, reg_no, role')
+                .eq('id', userId)
+                .maybeSingle();
+
+            if (!error && data) {
+                currentProfile = data;
+            }
+
+            return currentProfile;
+        }
+        
+        async function loadCart() {
+            if (!currentUser) return;
+            
+            const { data, error } = await _supabaseClient
+                .from('cart')
+                .select(`*, menu_items(*)`)
+                .eq('user_id', currentUser.id)
+                .eq('status', 'active');
+            
+            if (!error && data) {
+                cartItems = data;
+                updateCartCount();
+            }
+        }
+        
+        function updateCartCount() {
+            const count = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+            document.querySelectorAll('.cart-count-value').forEach(el => {
+                el.textContent = count;
+                el.style.display = count > 0 ? 'flex' : 'none';
+            });
+        }
+        
+        function getCartTotal() {
+            return cartItems.reduce((total, item) => total + (item.price_at_time * item.quantity), 0);
+        }
+        
+        async function addToCart(menuItem) {
+            if (!currentUser) {
+                showToast('Please login first', 'error');
+                renderLogin();
+                return;
+            }
+            
+            const existingItem = cartItems.find(item => item.menu_item_id === menuItem.id);
+            
+            if (existingItem) {
+                const newQuantity = existingItem.quantity + 1;
+                const { error } = await _supabaseClient
+                    .from('cart')
+                    .update({ quantity: newQuantity })
+                    .eq('id', existingItem.id);
+                
+                if (!error) {
+                    await loadCart();
+                    showToast(`Updated ${menuItem.name} quantity`, 'success');
+                    if (currentRole === 'student') renderCart();
+                    else renderMenu();
+                }
+            } else {
+                const { error } = await _supabaseClient
+                    .from('cart')
+                    .insert([{
+                        user_id: currentUser.id,
+                        menu_item_id: menuItem.id,
+                        quantity: 1,
+                        price_at_time: menuItem.price,
+                        status: 'active'
+                    }]);
+                
+                if (!error) {
+                    await loadCart();
+                    showToast(`Added ${menuItem.name} to cart`, 'success');
+                    if (currentRole === 'student') renderCart();
+                    else renderMenu();
+                }
+            }
+        }
+        
+        async function updateCartQuantity(cartId, quantity) {
+            if (quantity <= 0) {
+                await removeFromCart(cartId);
+                return;
+            }
+            
+            const { error } = await _supabaseClient
+                .from('cart')
+                .update({ quantity })
+                .eq('id', cartId);
+            
+            if (!error) {
+                await loadCart();
+                renderCart();
+            }
+        }
+        
+        async function removeFromCart(cartId) {
+            const { error } = await _supabaseClient
+                .from('cart')
+                .delete()
+                .eq('id', cartId);
+            
+            if (!error) {
+                await loadCart();
+                renderCart();
+                showToast('Item removed from cart', 'success');
+            }
+        }
+        
+        async function clearCart() {
+            const { error } = await _supabaseClient
+                .from('cart')
+                .delete()
+                .eq('user_id', currentUser.id)
+                .eq('status', 'active');
+            
+            if (!error) {
+                await loadCart();
+                renderCart();
+            }
+        }
+        
+        // Auth Functions
+        async function handleSignup(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const email = formData.get('email');
+            const password = formData.get('password');
+            const name = formData.get('name');
+            const role = formData.get('role');
+            const regNo = formData.get('regNo');
+            
+            if (password.length < 6) {
+                showToast('Password must be at least 6 characters', 'error');
+                return;
+            }
+            
+            if (role === 'student' && !regNo) {
+                showToast('Registration number is required for students', 'error');
+                return;
+            }
+            
+            try {
+                const { data, error } = await _supabaseClient.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        data: { name, role, reg_no: regNo }
+                    }
+                });
+                
+                if (error) throw error;
+                
+                if (data.user) {
+                    const { error: profileError } = await _supabaseClient
+                        .from('profiles')
+                        .insert([{
+                            id: data.user.id,
+                            email,
+                            name,
+                            role,
+                            reg_no: regNo,
+                            created_at: new Date()
+                        }]);
+                    
+                    if (profileError) console.error('Profile error:', profileError);
+                }
+                
+                showToast('Account created! Please login.', 'success');
+                renderLogin();
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        }
+        
+        async function handleLogin(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const email = formData.get('email');
+            const password = formData.get('password');
+            
+            try {
+                const { data, error } = await _supabaseClient.auth.signInWithPassword({
+                    email,
+                    password
+                });
+                
+                if (error) throw error;
+                
+                currentUser = data.user;
+                await fetchUserProfile(currentUser.id);
+                await fetchUserRole(currentUser.id);
+                await loadCart();
+                
+                showToast('Logged in successfully!', 'success');
+                
+                if (currentRole === 'admin') {
+                    renderAdminDashboard();
+                } else {
+                    renderMenu();
+                }
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        }
+        
+        async function handleLogout() {
+            await _supabaseClient.auth.signOut();
+            currentUser = null;
+            currentProfile = null;
+            currentRole = null;
+            cartItems = [];
+            showToast('Logged out successfully', 'success');
+            renderLogin();
+        }
+        
+        // Page Rendering Functions
+        function renderLanding() {
+            app.innerHTML = `
+                <div class="navbar">
+                    <div class="nav-container">
+                        <div class="nav-content">
+                            <div class="logo" onclick="window.renderLanding()">
+                                <div class="logo-icon">🍽️</div>
+                                <span class="logo-text">Quick Bites</span>
+                            </div>
+                            <div class="nav-links">
+                                <span class="nav-link" onclick="window.renderLogin()">Login</span>
+                                <button class="btn btn-primary" onclick="window.renderSignup()">Sign Up</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="container">
+                    <div style="text-align: center; max-width: 800px; margin: 0 auto;">
+                        <div style="display: inline-block; background: #ffedd5; padding: 0.5rem 1rem; border-radius: 9999px; margin-bottom: 1.5rem;">
+                            <span style="color: #ea580c; font-weight: 600;">Quick Bites</span>
+                        </div>
+                        <h1 style="font-size: 3rem; margin-bottom: 1rem; background: linear-gradient(135deg, #ea580c, #c2410c); -webkit-background-clip: text; background-clip: text; color: transparent;">
+                            Pre-order & Skip the Queue
+                        </h1>
+                        <p style="font-size: 1.25rem; color: #57534e; margin-bottom: 2rem;">
+                            Order your favorite meals online, pay with UPI or cash on counter, and get your food without waiting in long queues.
+                        </p>
+                        <div style="display: flex; gap: 1rem; justify-content: center;">
+                            <button class="btn btn-primary" onclick="window.renderSignup()">Get Started</button>
+                            <button class="btn btn-outline" onclick="window.renderLogin()">Login</button>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 4rem;">
+                        <h2 style="text-align: center; margin-bottom: 2rem;">Why Choose Quick Bites?</h2>
+                        <div class="grid grid-3">
+                            <div class="card" style="text-align: center;">
+                                <div class="card-body">
+                                    <div style="font-size: 3rem; margin-bottom: 1rem;">🍔</div>
+                                    <h3>Pre-order Food</h3>
+                                    <p style="color: #57534e;">Order your favorite meals in advance and skip the queue</p>
+                                </div>
+                            </div>
+                            <div class="card" style="text-align: center;">
+                                <div class="card-body">
+                                    <div style="font-size: 3rem; margin-bottom: 1rem;">⏰</div>
+                                    <h3>Payment Options</h3>
+                                    <p style="color: #57534e;">Pay securely with UPI or cash on counter</p>
+                                </div>
+                            </div>
+                            <div class="card" style="text-align: center;">
+                                <div class="card-body">
+                                    <div style="font-size: 3rem; margin-bottom: 1rem;">💳</div>
+                                    <h3>Easy Payment</h3>
+                                    <p style="color: #57534e;">Secure online payments with multiple options</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function renderLogin() {
+            app.innerHTML = `
+                <div class="navbar">
+                    <div class="nav-container">
+                        <div class="nav-content">
+                            <div class="logo" onclick="window.renderLanding()">
+                                <div class="logo-icon">🍽️</div>
+                                <span class="logo-text">Quick Bites</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="container" style="max-width: 400px;">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 style="text-align: center;">Login</h2>
+                        </div>
+                        <div class="card-body">
+                            <form onsubmit="window.handleLogin(event)">
+                                <div class="form-group">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" name="email" class="form-input" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Password</label>
+                                    <input type="password" name="password" class="form-input" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary" style="width: 100%;">Login</button>
+                            </form>
+                        </div>
+                        <div class="card-footer" style="text-align: center;">
+                            <p>Don't have an account? <span onclick="window.renderSignup()" style="color: #f97316; cursor: pointer;">Sign up</span></p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function renderSignup() {
+            app.innerHTML = `
+                <div class="navbar">
+                    <div class="nav-container">
+                        <div class="nav-content">
+                            <div class="logo" onclick="window.renderLanding()">
+                                <div class="logo-icon">🍽️</div>
+                                <span class="logo-text">Quick Bites</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="container" style="max-width: 500px;">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 style="text-align: center;">Create Account</h2>
+                        </div>
+                        <div class="card-body">
+                            <form onsubmit="window.handleSignup(event)">
+                                <div class="form-group">
+                                    <label class="form-label">Full Name</label>
+                                    <input type="text" name="name" class="form-input" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" name="email" class="form-input" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Role</label>
+                                    <div style="display: flex; gap: 1rem;">
+                                        <label><input type="radio" name="role" value="student" checked> Student</label>
+                                        <label><input type="radio" name="role" value="admin"> Admin</label>
+                                    </div>
+                                </div>
+                                <div class="form-group" id="regNoGroup">
+                                    <label class="form-label">Registration Number</label>
+                                    <input type="text" name="regNo" class="form-input">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Password</label>
+                                    <input type="password" name="password" class="form-input" required>
+                                    <small style="color: #78716c;">Minimum 6 characters</small>
+                                </div>
+                                <button type="submit" class="btn btn-primary" style="width: 100%;">Sign Up</button>
+                            </form>
+                        </div>
+                        <div class="card-footer" style="text-align: center;">
+                            <p>Already have an account? <span onclick="window.renderLogin()" style="color: #f97316; cursor: pointer;">Login</span></p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.querySelectorAll('input[name="role"]').forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    const regNoGroup = document.getElementById('regNoGroup');
+                    if (regNoGroup) {
+                        regNoGroup.style.display = e.target.value === 'student' ? 'block' : 'none';
+                    }
+                });
+            });
+        }
+        
+        async function renderMenu() {
+            const { data: items } = await _supabaseClient
+                .from('menu_items')
+                .select('*')
+                .order('category');
+            
+            menuItems = items || [];
+            const categories = [...new Set(menuItems.map(item => item.category))];
+            const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+            
+            app.innerHTML = `
+                <div class="navbar">
+                    <div class="nav-container">
+                        <div class="nav-content">
+                            <div class="logo" onclick="window.renderMenu()">
+                                <div class="logo-icon">🍽️</div>
+                                <span class="logo-text">Quick Bites</span>
+                            </div>
+                            <div class="nav-links">
+                                <span class="nav-link" onclick="window.renderMenu()">🍔 Menu</span>
+                                <span class="nav-link" onclick="window.renderOrderHistory()">📜 Orders</span>
+                                <span class="nav-link cart-badge" onclick="window.renderCart()">
+                                    🛒 Cart
+                                    <span class="cart-count cart-count-value" style="display: ${cartCount > 0 ? 'flex' : 'none'}">${cartCount}</span>
+                                </span>
+                                <button class="btn btn-outline" style="padding: 0.25rem 0.75rem;" onclick="window.handleLogout()">Logout</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="container">
+                    <h1 style="margin-bottom: 1rem;">Our Menu</h1>
+                    
+                    <div style="margin-bottom: 1.5rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <button class="btn btn-outline" onclick="window.filterMenu('all')">All</button>
+                        ${categories.map(cat => `<button class="btn btn-outline" onclick="window.filterMenu('${cat}')">${cat}</button>`).join('')}
+                    </div>
+                    
+                    <div id="menu-grid" class="grid grid-3"></div>
+                </div>
+            `;
+            
+            renderMenuItems('all');
+        }
+        
+        function renderMenuItems(category) {
+            const filtered = category === 'all' ? menuItems : menuItems.filter(item => item.category === category);
+            const grid = document.getElementById('menu-grid');
+            if (!grid) return;
+            
+            grid.innerHTML = filtered.map(item => `
+                <div class="card food-card">
+                    <img src="${getMenuImageUrl(item.image_url)}" data-direct-src="${escapeHtmlAttr(normalizeImageUrl(item.image_url))}" data-alt-proxy-src="${escapeHtmlAttr(getAltProxiedImageUrl(normalizeImageUrl(item.image_url)))}" data-retry-step="0" referrerpolicy="no-referrer" onerror="window.handleMenuImageError(this)" 
+                         class="food-card-img" alt="${item.name}">
+                    <div class="card-body">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                            <h3>${item.name}</h3>
+                            <span class="${item.is_veg ? 'veg-badge' : 'veg-badge nonveg-badge'}">
+                                ${item.is_veg ? 'Veg' : 'Non-Veg'}
+                            </span>
+                        </div>
+                        <p style="color: #57534e; font-size: 0.875rem; margin-bottom: 1rem;">${item.description || ''}</p>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 1.5rem; font-weight: bold; color: #f97316;">${formatPrice(item.price)}</span>
+                            <button class="btn btn-primary" style="padding: 0.25rem 1rem;" onclick='window.addToCart(${JSON.stringify(item).replace(/'/g, "\\'")})'>
+                                Add to Cart
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        window.filterMenu = (category) => {
+            renderMenuItems(category);
+        };
+        
+        async function renderCart() {
+            const cartTotal = getCartTotal();
+            const cartCount = cartItems.reduce((s, i) => s + i.quantity, 0);
+            
+            app.innerHTML = `
+                <div class="navbar">
+                    <div class="nav-container">
+                        <div class="nav-content">
+                            <div class="logo" onclick="window.renderMenu()">
+                                <div class="logo-icon">🍽️</div>
+                                <span class="logo-text">Quick Bites</span>
+                            </div>
+                            <div class="nav-links">
+                                <span class="nav-link" onclick="window.renderMenu()">🍔 Menu</span>
+                                <span class="nav-link" onclick="window.renderOrderHistory()">📜 Orders</span>
+                                <span class="nav-link cart-badge" onclick="window.renderCart()">
+                                    🛒 Cart
+                                    <span class="cart-count cart-count-value">${cartCount}</span>
+                                </span>
+                                <button class="btn btn-outline" style="padding: 0.25rem 0.75rem;" onclick="window.handleLogout()">Logout</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="container">
+                    <div class="grid" style="grid-template-columns: 2fr 1fr; gap: 1.5rem;">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Your Cart (${cartItems.length} items)</h3>
+                            </div>
+                            <div class="card-body" id="cart-items-list">
+                                ${cartItems.length === 0 ? '<p style="text-align: center; color: #78716c;">Your cart is empty</p>' : ''}
+                            </div>
+                        </div>
+                        
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Order Summary</h3>
+                            </div>
+                            <div class="card-body">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                    <span>Subtotal</span>
+                                    <span>${formatPrice(cartTotal)}</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                    <span>Tax (5%)</span>
+                                    <span>${formatPrice(cartTotal * 0.05)}</span>
+                                </div>
+                                <div style="border-top: 1px solid #ffedd5; margin: 1rem 0; padding-top: 1rem;">
+                                    <div style="display: flex; justify-content: space-between; font-weight: bold;">
+                                        <span>Total</span>
+                                        <span style="color: #f97316;">${formatPrice(cartTotal * 1.05)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-footer">
+                                <button class="btn btn-primary" style="width: 100%;" onclick="window.showCheckoutModal()" ${cartItems.length === 0 ? 'disabled' : ''}>
+                                    Proceed to Checkout
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            const container = document.getElementById('cart-items-list');
+            if (container && cartItems.length > 0) {
+                container.innerHTML = cartItems.map(item => `
+                    <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem 0; border-bottom: 1px solid #ffedd5;">
+                        <img src="${item.menu_items?.image_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=60&h=60&fit=crop'}" 
+                             style="width: 60px; height: 60px; border-radius: 0.5rem; object-fit: cover;">
+                        <div style="flex: 1;">
+                            <h4>${item.menu_items?.name}</h4>
+                            <p style="color: #f97316; font-weight: bold;">${formatPrice(item.price_at_time)}</p>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <button class="btn" style="padding: 0.25rem 0.5rem;" onclick="window.updateCartQuantity('${item.id}', ${item.quantity - 1})">-</button>
+                            <span>${item.quantity}</span>
+                            <button class="btn" style="padding: 0.25rem 0.5rem;" onclick="window.updateCartQuantity('${item.id}', ${item.quantity + 1})">+</button>
+                            <button class="btn btn-danger" style="padding: 0.25rem 0.5rem;" onclick="window.removeFromCart('${item.id}')">🗑️</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+        
+        // ============================================================
+        // PAYMENT STATE & VARIABLES
+        // ============================================================
+        let selectedPaymentMode = null;
+        let selectedTransactionId = '';
+        let hasOpenedUpiApp = false;
+        let adminTokenSearchQuery = '';
+        window.latestBillDetails = null;
+        
+        // Razorpay payment state
+        let razorpayOrderId = null;
+        let razorpayPaymentId = null;
+        let razorpaySignature = null;
+        let isPaymentVerified = false;
+        let paymentVerificationMode = 'server';
+        
+        const ORDER_META_STORAGE_KEY = 'smartCanteenOrderMeta';
+        const TOKEN_SEQUENCE_STORAGE_KEY = 'smartCanteenTokenSequence';
+        const CUSTOM_QR_IMAGE = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=Smart%20Canteen%20Payment';
+        const MERCHANT_UPI_ID = 'sanjayangounder@oksbi';
+
+        function readOrderMetaStore() {
+            try {
+                return JSON.parse(localStorage.getItem(ORDER_META_STORAGE_KEY) || '{}') || {};
+            } catch (error) {
+                return {};
+            }
+        }
+
+        function writeOrderMeta(orderId, meta) {
+            const store = readOrderMetaStore();
+            store[orderId] = { ...(store[orderId] || {}), ...meta };
+            localStorage.setItem(ORDER_META_STORAGE_KEY, JSON.stringify(store));
+        }
+
+        function getOrderMeta(orderId) {
+            const store = readOrderMetaStore();
+            return store[orderId] || {};
+        }
+
+        function readStoredTokenSequence() {
+            const rawValue = localStorage.getItem(TOKEN_SEQUENCE_STORAGE_KEY);
+            const parsedValue = parseInt(rawValue || '0', 10);
+            return Number.isNaN(parsedValue) ? 0 : parsedValue;
+        }
+
+        function writeStoredTokenSequence(sequence) {
+            localStorage.setItem(TOKEN_SEQUENCE_STORAGE_KEY, String(sequence));
+        }
+
+        function validateTransactionId(transactionId) {
+            const value = String(transactionId || '').trim();
+            if (!value) {
+                return 'Transaction ID is required.';
+            }
+
+            if (value.length < 8) {
+                return 'Transaction ID must be at least 8 characters.';
+            }
+
+            return '';
+        }
+
+        function validateUpiId(upiId) {
+            const value = String(upiId || '').trim();
+            if (!value) {
+                return 'UPI ID is required.';
+            }
+
+            if (!/^[a-zA-Z0-9._-]{2,}@[a-zA-Z]{2,}$/.test(value)) {
+                return 'Please enter a valid UPI ID (example: name@bank).';
+            }
+
+            return '';
+        }
+
+        function payWithUPI(amount) {
+            const normalizedAmount = Math.max(1, Math.ceil(Number(amount) || 0));
+            const upiLink =
+                'upi://pay?pa=sanjayangounder@oksbi'+'&pn=Quick%20Bites'+'&am=' +
+                Math.ceil(amount) +
+                '&cu=INR' +
+                '&tr=TXN' + Date.now();
+
+            window.location.href = upiLink;
+        }
+
+        /**
+         * ============================================================
+         * RAZORPAY PAYMENT FUNCTIONS
+         * ============================================================
+         */
+
+        /**
+         * Create a Razorpay order by calling the backend
+         * @param {number} amount - Order amount in rupees
+         * @returns {Object} - Razorpay order object with id and keyId
+         */
+        async function createRazorpayOrder(amount) {
+            const amountInPaise = Math.max(100, Math.round(Number(amount || 0) * 100));
+            try {
+                const response = await fetch(`${PAYMENT_BACKEND_URL}/create-order`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        amount: amount,
+                        description: 'Quick Bites Order Payment'
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Backend error: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.message || 'Failed to create order');
+                }
+
+                return {
+                    ...data,
+                    verificationMode: 'server'
+                };
+            } catch (error) {
+                console.error('Error creating Razorpay order:', error);
+                const message = (error && error.message) || '';
+
+                if (!ENABLE_SINGLE_FILE_PAYMENT_FALLBACK) {
+                    if (message.includes('Failed to fetch')) {
+                        showToast(`Payment server is not reachable at ${PAYMENT_BACKEND_URL}. Start backend with: npm start`, 'error');
+                    } else {
+                        showToast(`Error: ${message}`, 'error');
+                    }
+                    throw error;
+                }
+
+                showToast('Backend not reachable. Using single-file checkout mode.', 'error');
+                return {
+                    success: true,
+                    keyId: RAZORPAY_KEY_ID,
+                    verificationMode: 'client',
+                    order: {
+                        id: null,
+                        amount: amountInPaise,
+                        currency: 'INR'
+                    }
+                };
+            }
+        }
+
+        /**
+         * Verify payment signature with the backend
+         * @param {Object} paymentData - Contains razorpay_order_id, razorpay_payment_id, razorpay_signature
+         * @returns {Object} - Verification response from backend
+         */
+        async function verifyPaymentSignature(paymentData) {
+            try {
+                const response = await fetch(`${PAYMENT_BACKEND_URL}/verify-payment`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(paymentData)
+                });
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.message || 'Payment verification failed');
+                }
+
+                return data;
+            } catch (error) {
+                console.error('Error verifying payment:', error);
+                showToast(`Verification Error: ${error.message}`, 'error');
+                throw error;
+            }
+        }
+
+        /**
+         * Open Razorpay Checkout modal for payment
+         * @param {number} totalAmount - Total amount to be paid (in rupees)
+         */
+        async function openRazorpayCheckout(totalAmount) {
+            try {
+                showToast('Initializing payment...', 'success');
+
+                // Step 1: Create Razorpay order
+                const orderResponse = await createRazorpayOrder(totalAmount);
+                paymentVerificationMode = orderResponse.verificationMode || 'server';
+                razorpayOrderId = orderResponse.order?.id || null;
+                const checkoutAmount = Number(orderResponse.order?.amount) || Math.max(100, Math.round(Number(totalAmount || 0) * 100));
+
+                // Step 2: Configure Razorpay options
+                const options = {
+                    key: orderResponse.keyId || RAZORPAY_KEY_ID,
+                    amount: checkoutAmount,
+                    currency: 'INR',
+                    name: 'Quick Bites',
+                    description: 'Order Payment',
+                    image: '',
+                    
+                    // Callback when payment is successful
+                    handler: async function(response) {
+                        try {
+                            razorpayOrderId = response.razorpay_order_id || razorpayOrderId;
+                            razorpayPaymentId = response.razorpay_payment_id;
+                            razorpaySignature = response.razorpay_signature || 'CLIENT_SIDE_NO_SERVER_VERIFY';
+
+                            if (paymentVerificationMode === 'server' && razorpayOrderId && response.razorpay_signature) {
+                                showToast('Verifying payment...', 'success');
+
+                                // Step 3: Verify payment signature with backend
+                                const verifyResponse = await verifyPaymentSignature({
+                                    razorpay_order_id: razorpayOrderId,
+                                    razorpay_payment_id: razorpayPaymentId,
+                                    razorpay_signature: response.razorpay_signature
+                                });
+
+                                if (verifyResponse.success) {
+                                    isPaymentVerified = true;
+                                    showToast('Payment verified successfully!', 'success');
+                                }
+                            } else {
+                                isPaymentVerified = true;
+                                showToast('Payment completed in single-file mode.', 'success');
+                            }
+
+                            updateConfirmOrderButtonState();
+                        } catch (error) {
+                            console.error('Payment verification failed:', error);
+                            isPaymentVerified = false;
+                            showToast('Payment verification failed. Please try again.', 'error');
+                        }
+                    },
+
+                    // Callback when payment fails
+                    modal: {
+                        ondismiss: function() {
+                            console.log('Payment cancelled');
+                            isPaymentVerified = false;
+                            razorpayOrderId = null;
+                            razorpayPaymentId = null;
+                            razorpaySignature = null;
+                            updateConfirmOrderButtonState();
+                            showToast('Payment cancelled', 'error');
+                        }
+                    }
+                };
+
+                if (razorpayOrderId) {
+                    options.order_id = razorpayOrderId;
+                }
+
+                // Step 4: Create and display Razorpay checkout
+                const rzp1 = new Razorpay(options);
+
+                rzp1.on('payment.failed', function(response) {
+                    isPaymentVerified = false;
+                    updateConfirmOrderButtonState();
+                    const reason = response?.error?.description || response?.error?.reason || 'Payment failed';
+                    showToast(`Payment failed: ${reason}`, 'error');
+                });
+
+                rzp1.open();
+            } catch (error) {
+                console.error('Error opening Razorpay checkout:', error);
+                isPaymentVerified = false;
+                showToast(`Failed to open payment gateway: ${error.message || 'Unknown error'}`, 'error');
+            }
+        }
+
+        /**
+         * ============================================================
+         */
+
+        function extractTokenSequenceNumber(token) {
+            if (token === null || token === undefined) return null;
+            const tokenText = String(token).trim();
+            const match = tokenText.match(/^(\d+)/);
+            if (!match) return null;
+            const sequence = parseInt(match[1], 10);
+            return Number.isNaN(sequence) ? null : sequence;
+        }
+
+        function formatCollectionSlotTime(dateValue) {
+            if (!dateValue) return '-';
+            const slotDate = new Date(dateValue);
+            if (Number.isNaN(slotDate.getTime())) return '-';
+
+            return slotDate.toLocaleTimeString('en-IN', {
+                timeZone: 'Asia/Kolkata',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+        }
+
+        function formatSlotWindow(startTime, endTime) {
+            if (!startTime) return '-';
+            const startLabel = formatCollectionSlotTime(startTime);
+            const endLabel = endTime ? formatCollectionSlotTime(endTime) : '';
+            return endLabel ? `${startLabel} - ${endLabel}` : startLabel;
+        }
+
+        function getIndiaDateParts(dateValue = new Date()) {
+            const formatter = new Intl.DateTimeFormat('en-CA', {
+                timeZone: 'Asia/Kolkata',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            });
+
+            const parts = formatter.formatToParts(new Date(dateValue));
+            const year = parts.find(part => part.type === 'year')?.value;
+            const month = parts.find(part => part.type === 'month')?.value;
+            const day = parts.find(part => part.type === 'day')?.value;
+            return { year, month, day };
+        }
+
+        function createFallbackSlotsForToday() {
+            const { year, month, day } = getIndiaDateParts(new Date());
+            const startMinuteOfDay = (12 * 60) + 45;
+            const endMinuteOfDay = 13 * 60;
+            const slots = [];
+
+            for (let minute = startMinuteOfDay; minute < endMinuteOfDay; minute += 5) {
+                const hour = Math.floor(minute / 60);
+                const mins = minute % 60;
+                const startTime = new Date(`${year}-${month}-${day}T${String(hour).padStart(2, '0')}:${String(mins).padStart(2, '0')}:00+05:30`);
+                const endTime = new Date(startTime.getTime() + (5 * 60 * 1000));
+                const slotId = `fallback-${startTime.toISOString()}`;
+
+                slots.push({
+                    id: slotId,
+                    start_time: startTime.toISOString(),
+                    end_time: endTime.toISOString(),
+                    capacity: SLOT_MAX_ORDERS,
+                    booked_count: 0,
+                    remaining: SLOT_MAX_ORDERS,
+                    is_fallback: true
+                });
+            }
+
+            return slots;
+        }
+
+        function getOrderSlotId(order) {
+            return order?.slot_id || null;
+        }
+
+        async function ensureSlotsInitializedForToday() {
+            if (hasInitializedSlotsToday) return;
+
+            try {
+                await _supabaseClient.rpc('generate_slots_for_today');
+            } catch (error) {
+                console.warn('Slot generation warning:', error?.message || error);
+            }
+
+            hasInitializedSlotsToday = true;
+        }
+
+        async function fetchTodaySlots() {
+            if (!useDbSlotSystem) {
+                return createFallbackSlotsForToday();
+            }
+
+            try {
+                await ensureSlotsInitializedForToday();
+                const { data, error } = await _supabaseClient.rpc('get_available_slots_for_today');
+                if (error) {
+                    throw error;
+                }
+
+                if (!Array.isArray(data) || data.length === 0) {
+                    useDbSlotSystem = false;
+                    return createFallbackSlotsForToday();
+                }
+
+                return data;
+            } catch (error) {
+                console.warn('Slot RPC unavailable. Falling back to local slot list:', error?.message || error);
+                useDbSlotSystem = false;
+                return createFallbackSlotsForToday();
+            }
+        }
+
+        async function getSlotById(slotId) {
+            if (!slotId) return null;
+
+            if (!useDbSlotSystem || String(slotId).startsWith('fallback-')) {
+                return checkoutSlots.find(slot => slot.id === slotId) || null;
+            }
+
+            const { data, error } = await _supabaseClient
+                .from('time_slots')
+                .select('id, start_time, end_time, capacity, booked_count')
+                .eq('id', slotId)
+                .maybeSingle();
+
+            if (error) {
+                throw error;
+            }
+
+            return data || null;
+        }
+
+        async function bookSlot(slotId) {
+            if (!useDbSlotSystem || String(slotId).startsWith('fallback-')) {
+                const slot = await getSlotById(slotId);
+                if (!slot) {
+                    throw new Error('Selected slot is unavailable. Please refresh checkout.');
+                }
+
+                return {
+                    slot,
+                    slotLabel: formatSlotWindow(slot.start_time, slot.end_time),
+                    slotPosition: 1,
+                    slotSequenceLabel: '-'
+                };
+            }
+
+            const { data, error } = await _supabaseClient.rpc('book_slot', { p_slot_id: slotId });
+            if (error) {
+                console.warn('book_slot RPC failed, fallback mode enabled:', error?.message || error);
+                useDbSlotSystem = false;
+                return await bookSlot(slotId);
+            }
+
+            const result = Array.isArray(data) ? data[0] : data;
+            if (!result?.success) {
+                throw new Error(result?.message || 'Unable to book slot');
+            }
+
+            const slot = await getSlotById(slotId);
+            if (!slot) {
+                throw new Error('Booked slot details not found');
+            }
+
+            const slotPosition = Math.max(1, Number(slot.booked_count) || 1);
+            return {
+                slot,
+                slotLabel: formatSlotWindow(slot.start_time, slot.end_time),
+                slotPosition,
+                slotSequenceLabel: `${slotPosition}/${Number(slot.capacity) || SLOT_MAX_ORDERS}`
+            };
+        }
+
+        async function releaseSlot(slotId) {
+            if (!slotId) return;
+
+            if (!useDbSlotSystem || String(slotId).startsWith('fallback-')) {
+                return;
+            }
+
+            try {
+                await _supabaseClient.rpc('release_slot', { p_slot_id: slotId });
+            } catch (error) {
+                console.warn('Failed to release slot:', error?.message || error);
+            }
+        }
+
+        function updateConfirmOrderButtonState() {
+            const confirmBtn = document.getElementById('confirm-order-btn');
+            if (!confirmBtn) return;
+
+            if (!selectedPaymentMode) {
+                confirmBtn.disabled = true;
+                return;
+            }
+
+            if (selectedPaymentMode === 'online') {
+                confirmBtn.disabled = !isPaymentVerified;
+                return;
+            }
+
+            confirmBtn.disabled = false;
+        }
+
+        async function loadCheckoutSlotOptions() {
+            const slotSelect = document.getElementById('collection-slot-select');
+            if (!slotSelect) return;
+
+            slotSelect.innerHTML = '<option value="">Loading slots...</option>';
+
+            try {
+                checkoutSlots = await fetchTodaySlots();
+
+                slotSelect.innerHTML = checkoutSlots
+                    .map(slot => {
+                        const booked = Number(slot.booked_count) || 0;
+                        const capacity = Number(slot.capacity) || SLOT_MAX_ORDERS;
+                        const isFull = booked >= capacity;
+                        const slotLabel = formatSlotWindow(slot.start_time, slot.end_time);
+                        return `<option value="${slot.id}" ${isFull ? 'disabled' : ''}>${slotLabel} (${booked}/${capacity})${isFull ? ' - Full' : ''}</option>`;
+                    })
+                    .join('');
+
+                const firstAvailable = checkoutSlots.find(slot => (Number(slot.booked_count) || 0) < (Number(slot.capacity) || SLOT_MAX_ORDERS));
+                if (firstAvailable) {
+                    selectedCollectionSlotId = firstAvailable.id;
+                    selectedCollectionSlotLabel = formatSlotWindow(firstAvailable.start_time, firstAvailable.end_time);
+                    slotSelect.value = firstAvailable.id;
+                } else {
+                    selectedCollectionSlotId = '';
+                    selectedCollectionSlotLabel = '';
+                    slotSelect.innerHTML = '<option value="">No slots available for today</option>';
+                }
+
+                updateConfirmOrderButtonState();
+            } catch (error) {
+                slotSelect.innerHTML = '<option value="">Unable to load slots</option>';
+                selectedCollectionSlotId = '';
+                selectedCollectionSlotLabel = '';
+                updateConfirmOrderButtonState();
+            }
+        }
+
+        async function allocateCollectionSlotTime(preferredSlotId = '') {
+            const selectedSlotId = preferredSlotId || selectedCollectionSlotId;
+            if (selectedSlotId) {
+                return await bookSlot(selectedSlotId);
+            }
+
+            const slots = await fetchTodaySlots();
+            const fallbackSlot = slots.find(slot => (Number(slot.booked_count) || 0) < (Number(slot.capacity) || SLOT_MAX_ORDERS));
+            if (!fallbackSlot) {
+                throw new Error('All pickup slots are full for today.');
+            }
+
+            return await bookSlot(fallbackSlot.id);
+        }
+
+        function getOrderSlotLabel(order) {
+            const slotStart = order?.time_slots?.start_time;
+            const slotEnd = order?.time_slots?.end_time;
+            if (slotStart) {
+                return formatSlotWindow(slotStart, slotEnd);
+            }
+
+            if (order?.collection_time) {
+                return formatCollectionSlotTime(order.collection_time);
+            }
+
+            const fallbackSlot = getOrderMeta(order?.id || '').slot_time_label;
+            return fallbackSlot || '-';
+        }
+
+        function buildSlotSequenceLabelMap(orders) {
+            const sortedOrders = [...(orders || [])]
+                .filter(order => order && getOrderSlotId(order))
+                .sort((a, b) => {
+                    const slotCompare = String(getOrderSlotId(a)).localeCompare(String(getOrderSlotId(b)));
+                    if (slotCompare !== 0) return slotCompare;
+                    const createdDiff = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+                    if (createdDiff !== 0) return createdDiff;
+                    return String(a.id || '').localeCompare(String(b.id || ''));
+                });
+
+            const slotCounts = new Map();
+            const sequenceMap = {};
+
+            sortedOrders.forEach(order => {
+                const slotKey = String(getOrderSlotId(order) || '');
+                if (!slotKey) return;
+
+                const capacity = Number(order?.time_slots?.capacity) || SLOT_MAX_ORDERS;
+
+                const nextPosition = (slotCounts.get(slotKey) || 0) + 1;
+                slotCounts.set(slotKey, nextPosition);
+                sequenceMap[order.id] = `${nextPosition}/${capacity}`;
+            });
+
+            return sequenceMap;
+        }
+
+        function getOrderSlotSequenceLabel(order, slotSequenceMap = null) {
+            if (slotSequenceMap && order?.id && slotSequenceMap[order.id]) {
+                return slotSequenceMap[order.id];
+            }
+
+            const fallbackSequence = getOrderMeta(order?.id || '').slot_sequence_label;
+            return fallbackSequence || '-';
+        }
+
+        function getOrderSlotDisplayLabel(order, slotSequenceMap = null) {
+            return '12:45 PM - 1:00 PM';
+        }
+
+        async function generateSequentialTokenNumber(orderId) {
+            const { data, error } = await _supabaseClient
+                .from('orders')
+                .select('id, created_at')
+                .order('created_at', { ascending: true })
+                .order('id', { ascending: true });
+
+            if (error) {
+                throw error;
+            }
+
+            const orderIndex = (data || []).findIndex(order => order.id === orderId);
+            if (orderIndex === -1) {
+                throw new Error('Unable to generate token sequence');
+            }
+
+            const tokenValue = (orderIndex % 500) + 1;
+            writeStoredTokenSequence(tokenValue);
+            return String(tokenValue);
+        }
+
+        function generateTransactionId(paymentMode) {
+            const prefix = paymentMode === 'upi' ? 'UPI' : 'CASH';
+            const randomPart = Math.random().toString(36).slice(2, 8).toUpperCase();
+            return `${prefix}-${Date.now().toString().slice(-6)}-${randomPart}`;
+        }
+
+        function getBillCustomerDetails() {
+            return {
+                name: currentProfile?.name || currentUser?.user_metadata?.name || 'Student',
+                email: currentProfile?.email || currentUser?.email || '-',
+                regNo: currentProfile?.reg_no || currentUser?.user_metadata?.reg_no || '-'
+            };
+        }
+
+        function buildBillDetails(order, paymentMode, transactionId) {
+            const customer = getBillCustomerDetails();
+            const collectionTime = new Date(order.collection_time);
+            const collectionTimeLabel = collectionTime.toLocaleTimeString('en-IN', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+
+            return {
+                orderId: order.id,
+                tokenNumber: order.token_number,
+                collectionTime: order.collection_time || null,
+                collectionTimeLabel: collectionTimeLabel,
+                paymentMode,
+                transactionId,
+                customer,
+                items: order.order_items || [],
+                totalAmount: order.total_amount || 0,
+                createdAt: order.created_at || new Date().toISOString()
+            };
+        }
+
+        function downloadBillPdf(billDetails) {
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF();
+            const marginLeft = 14;
+            let y = 16;
+
+            pdf.setFontSize(18);
+            pdf.setFont('helvetica', 'bold');
+            pdf.text('Quick Bites Bill', marginLeft, y);
+
+            y += 10;
+            pdf.setFontSize(11);
+            pdf.setFont('helvetica', 'normal');
+            pdf.text(`Bill Date: ${new Date(billDetails.createdAt).toLocaleString()}`, marginLeft, y);
+            y += 8;
+            pdf.text(`Order ID: ${billDetails.orderId.slice(0, 8)}`, marginLeft, y);
+            y += 8;
+            pdf.text(`Token Number: #${billDetails.tokenNumber}`, marginLeft, y);
+            y += 8;
+            pdf.text(`Pickup Time: 12:45 PM - 1:00 PM`, marginLeft, y);
+            y += 8;
+            pdf.text(`Payment Mode: ${billDetails.paymentMode.toUpperCase()}`, marginLeft, y);
+            y += 8;
+            pdf.text(`Transaction ID: ${billDetails.transactionId}`, marginLeft, y);
+
+            y += 12;
+            pdf.setFont('helvetica', 'bold');
+            pdf.text('Customer Details', marginLeft, y);
+            y += 8;
+            pdf.setFont('helvetica', 'normal');
+            pdf.text(`Name: ${billDetails.customer.name}`, marginLeft, y);
+            y += 8;
+            pdf.text(`Email: ${billDetails.customer.email}`, marginLeft, y);
+            y += 8;
+            pdf.text(`Reg No: ${billDetails.customer.regNo}`, marginLeft, y);
+
+            y += 12;
+            pdf.setFont('helvetica', 'bold');
+            pdf.text('Order Items', marginLeft, y);
+            y += 8;
+            pdf.setFont('helvetica', 'normal');
+
+            billDetails.items.forEach(item => {
+                const itemLine = `${item.quantity}x ${item.menu_items?.name || 'Item'} - ${formatPrice(item.price_at_time * item.quantity)}`;
+                const wrappedLines = pdf.splitTextToSize(itemLine, 180);
+                pdf.text(wrappedLines, marginLeft, y);
+                y += wrappedLines.length * 6;
+            });
+
+            y += 4;
+            pdf.setFont('helvetica', 'bold');
+            pdf.text(`Total Amount: ${formatPrice(billDetails.totalAmount)}`, marginLeft, y);
+
+            pdf.save(`smart-canteen-bill-${billDetails.orderId.slice(0, 8)}.pdf`);
+        }
+
+        window.downloadBillAndGoToMenu = () => {
+            if (!window.latestBillDetails) return;
+            downloadBillPdf(window.latestBillDetails);
+            setTimeout(() => renderMenu(), 200);
+        };
+        
+        window.showCheckoutModal = async () => {
+            selectedPaymentMode = null;
+            selectedTransactionId = '';
+            hasOpenedUpiApp = false;
+            isPaymentVerified = false;
+            paymentVerificationMode = 'server';
+            razorpayOrderId = null;
+            razorpayPaymentId = null;
+            razorpaySignature = null;
+            
+            const totalBillAmount = (getCartTotal() * 1.05).toFixed(2);
+            
+            const modal = document.createElement('div');
+            modal.className = 'modal active';
+            modal.id = 'checkoutModal';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <div class="card-header">
+                        <h3>Select Payment Mode</h3>
+                    </div>
+                    <div class="card-body">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem; font-weight: 600;">
+                            <span>Total Bill Amount</span>
+                            <span style="color: #f97316;">${formatPrice(totalBillAmount)}</span>
+                        </div>
+                        <div style="display: grid; gap: 0.75rem; margin-bottom: 1rem;" id="payment-modes">
+                            <button class="btn btn-outline payment-mode-btn" onclick="window.selectPaymentMode('online')">Pay Online (Razorpay)</button>
+                            <button class="btn btn-outline payment-mode-btn" onclick="window.selectPaymentMode('cash')">Cash on Counter</button>
+                        </div>
+                        
+                        <!-- Online Payment Section -->
+                        <div id="razorpay-section" style="display: none; margin-bottom: 1rem;">
+                            <div style="background: #fff7ed; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; border-left: 4px solid #f97316;">
+                                <p style="margin: 0; font-size: 0.875rem; color: #57534e;">
+                                    ✓ Secure payment with Razorpay<br/>
+                                    ✓ Supports all major card, netbanking, and UPI payments<br/>
+                                    ✓ Payment will be verified before order confirmation
+                                </p>
+                            </div>
+                            <button class="btn btn-primary" style="width: 100%;" id="razorpay-pay-btn" onclick="window.openRazorpayCheckout(${totalBillAmount})">
+                                Open Razorpay Checkout
+                            </button>
+                        </div>
+                        
+                        <div id="payment-status" style="display: none; margin-bottom: 1rem; padding: 0.75rem; border-radius: 0.5rem; font-size: 0.875rem;">
+                            <span id="payment-status-text"></span>
+                        </div>
+                        
+                        <div id="payment-error" style="display: none; color: #dc2626; font-size: 0.875rem; margin-bottom: 0.75rem; padding: 0.5rem; background: #fee2e2; border-radius: 0.25rem;"></div>
+                    </div>
+                    <div class="card-footer" style="display: flex; gap: 1rem;">
+                        <button class="btn btn-outline" style="flex: 1;" onclick="window.closeModal()">Cancel</button>
+                        <button class="btn btn-primary" style="flex: 1;" id="confirm-order-btn" disabled onclick="window.confirmOrder()">Confirm Order</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            updateConfirmOrderButtonState();
+        };
+
+        
+        window.selectPaymentMode = (mode) => {
+            selectedPaymentMode = mode;
+            const razorpaySection = document.getElementById('razorpay-section');
+            const paymentError = document.getElementById('payment-error');
+            const paymentStatus = document.getElementById('payment-status');
+
+            document.querySelectorAll('.payment-mode-btn').forEach(btn => {
+                const isActive = (mode === 'online' && btn.textContent.toLowerCase().includes('online')) || (mode === 'cash' && btn.textContent.toLowerCase().includes('cash'));
+                btn.classList.toggle('payment-option-active', isActive);
+            });
+
+            if (paymentError) {
+                paymentError.style.display = 'none';
+                paymentError.textContent = '';
+            }
+
+            if (paymentStatus) {
+                paymentStatus.style.display = 'none';
+            }
+
+            if (razorpaySection) {
+                razorpaySection.style.display = mode === 'online' ? 'block' : 'none';
+            }
+
+            // Reset payment state
+            if (mode !== 'online') {
+                isPaymentVerified = false;
+                razorpayOrderId = null;
+                razorpayPaymentId = null;
+                razorpaySignature = null;
+            }
+
+            const confirmBtn = document.getElementById('confirm-order-btn');
+            if (confirmBtn) {
+                updateConfirmOrderButtonState();
+            }
+        };
+        
+
+        
+        window.closeModal = () => {
+            const modal = document.getElementById('checkoutModal');
+            if (modal) modal.remove();
+        };
+        
+        window.confirmOrder = async () => {
+            if (!selectedPaymentMode) {
+                showToast('Please select a payment mode', 'error');
+                return;
+            }
+
+            const cartTotal = getCartTotal();
+            const billTotal = cartTotal * 1.05;
+            const billItems = cartItems.map(item => ({
+                quantity: item.quantity,
+                price_at_time: item.price_at_time,
+                menu_items: item.menu_items
+            }));
+
+            // For online payment mode, verify payment was successful
+            if (selectedPaymentMode === 'online') {
+                const paymentError = document.getElementById('payment-error');
+                
+                if (!isPaymentVerified) {
+                    if (paymentError) {
+                        paymentError.textContent = 'Please complete the Razorpay payment verification first.';
+                        paymentError.style.display = 'block';
+                    }
+                    showToast('Payment not verified', 'error');
+                    return;
+                }
+
+                if (!razorpayPaymentId || (paymentVerificationMode === 'server' && !razorpaySignature)) {
+                    if (paymentError) {
+                        paymentError.textContent = 'Payment verification data is missing. Please try again.';
+                        paymentError.style.display = 'block';
+                    }
+                    showToast('Invalid payment data', 'error');
+                    return;
+                }
+
+                // Use Razorpay payment ID as transaction ID
+                selectedTransactionId = razorpayPaymentId;
+                
+                if (paymentError) {
+                    paymentError.textContent = '';
+                    paymentError.style.display = 'none';
+                }
+            } else {
+                // For cash mode, generate a simple transaction ID
+                selectedTransactionId = generateTransactionId(selectedPaymentMode);
+            }
+            
+            // Set default collection time (next hour)
+            const collectionTime = new Date();
+            collectionTime.setHours(collectionTime.getHours() + 1);
+
+            const { data: order, error: orderError } = await _supabaseClient
+                .from('orders')
+                .insert([{
+                    user_id: currentUser.id,
+                    total_amount: billTotal,
+                    status: 'pending',
+                    created_at: new Date(),
+                    collection_time: collectionTime.toISOString()
+                }])
+                .select()
+                .single();
+            
+            if (orderError) {
+                showToast('Failed to create order', 'error');
+                return;
+            }
+            
+            const orderItems = cartItems.map(item => ({
+                order_id: order.id,
+                menu_item_id: item.menu_item_id,
+                quantity: item.quantity,
+                price_at_time: item.price_at_time
+            }));
+            
+            const { error: itemsError } = await _supabaseClient
+                .from('order_items')
+                .insert(orderItems);
+            
+            if (itemsError) {
+                await _supabaseClient.from('orders').delete().eq('id', order.id);
+                showToast('Failed to create order items', 'error');
+                return;
+            }
+
+            let tokenNumber;
+            try {
+                tokenNumber = await generateSequentialTokenNumber(order.id);
+            } catch (tokenError) {
+                await _supabaseClient.from('orders').delete().eq('id', order.id);
+                showToast('Failed to generate token number', 'error');
+                return;
+            }
+
+            await _supabaseClient
+                .from('orders')
+                .update({
+                    token_number: tokenNumber,
+                    token_generated: true,
+                    collection_time: collectionTime.toISOString()
+                })
+                .eq('id', order.id);
+
+            // Store payment details in metadata
+            const metaData = {
+                payment_mode: selectedPaymentMode,
+                transaction_id: selectedTransactionId,
+                token_number: tokenNumber,
+                collection_time: collectionTime.toISOString()
+            };
+
+            // For Razorpay payments, store additional payment details
+            if (selectedPaymentMode === 'online' && razorpayOrderId && razorpaySignature) {
+                metaData.razorpay_order_id = razorpayOrderId;
+                metaData.razorpay_payment_id = razorpayPaymentId;
+                metaData.razorpay_signature = razorpaySignature;
+            }
+
+            writeOrderMeta(order.id, metaData);
+
+            const billDetails = buildBillDetails(
+                {
+                    ...order,
+                    token_number: tokenNumber,
+                    collection_time: collectionTime.toISOString(),
+                    total_amount: billTotal,
+                    order_items: billItems,
+                    created_at: new Date().toISOString()
+                },
+                selectedPaymentMode,
+                selectedTransactionId
+            );
+            
+            await clearCart();
+            window.closeModal();
+
+            showToast(`Order placed! Token #${tokenNumber}. Pickup time: ${formatCollectionSlotTime(collectionTime)}`, 'success');
+            window.latestBillDetails = billDetails;
+            renderBillConfirmation(billDetails);
+        };
+        
+        async function renderBillConfirmation(billDetails) {
+            const { data: order } = await _supabaseClient
+                .from('orders')
+                .select('*, order_items(*, menu_items(*))')
+                .eq('id', billDetails.orderId)
+                .single();
+
+            const fullBillDetails = order
+                ? {
+                    ...billDetails,
+                    items: order.order_items || billDetails.items,
+                    totalAmount: order.total_amount || billDetails.totalAmount,
+                    tokenNumber: order.token_number || billDetails.tokenNumber,
+                    collectionTime: order.collection_time || billDetails.collectionTime,
+                    collectionTimeLabel: formatCollectionSlotTime(order.collection_time || billDetails.collectionTime),
+                    createdAt: order.created_at || billDetails.createdAt
+                }
+                : billDetails;
+            
+            app.innerHTML = `
+                <div class="navbar">
+                    <div class="nav-container">
+                        <div class="nav-content">
+                            <div class="logo" onclick="window.renderMenu()">
+                                <div class="logo-icon">🍽️</div>
+                                <span class="logo-text">Quick Bites</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="container" style="max-width: 600px;">
+                    <div style="text-align: center; margin-bottom: 2rem;">
+                        <h1>Bill Generated! 🎉</h1>
+                        <p>Your order has been placed successfully</p>
+                    </div>
+                    
+                    <div class="card" style="background: linear-gradient(135deg, #fff7ed, #ffedd5); border: 2px solid #f97316;">
+                        <div class="card-body" style="text-align: center;">
+                            <div style="background: #f97316; color: white; display: inline-block; padding: 0.5rem 1rem; border-radius: 9999px; margin-bottom: 1rem;">
+                                Token ${fullBillDetails.tokenNumber ? `#${fullBillDetails.tokenNumber}` : 'Pending Verification'}
+                            </div>
+                            <h2>Bill Summary</h2>
+                            <div style="margin: 1.5rem 0;">
+                                <div style="display: flex; justify-content: space-between; padding: 0.5rem; background: white; border-radius: 0.5rem; margin-bottom: 0.5rem;">
+                                    <span>Customer</span>
+                                    <strong>${fullBillDetails.customer.name}</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; padding: 0.5rem; background: white; border-radius: 0.5rem;">
+                                    <span>Email</span>
+                                    <strong>${fullBillDetails.customer.email}</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; padding: 0.5rem; background: white; border-radius: 0.5rem; margin-top: 0.5rem;">
+                                    <span>Reg No</span>
+                                    <strong>${fullBillDetails.customer.regNo}</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; padding: 0.5rem; background: white; border-radius: 0.5rem; margin-top: 0.5rem;">
+                                    <span>Payment Mode</span>
+                                    <strong>${fullBillDetails.paymentMode.toUpperCase()}</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; padding: 0.5rem; background: white; border-radius: 0.5rem; margin-top: 0.5rem;">
+                                    <span>Pickup Slot</span>
+                                    <strong>12:45 PM - 1:00 PM</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; padding: 0.5rem; background: white; border-radius: 0.5rem; margin-top: 0.5rem;">
+                                    <span>Transaction ID</span>
+                                    <strong>${fullBillDetails.transactionId}</strong>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+                                <button class="btn btn-outline" onclick="window.downloadBillAndGoToMenu()">Download Bill PDF & Go to Menu</button>
+                                <button class="btn btn-primary" onclick="window.renderMenu()">Go to Menu</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card" style="margin-top: 1rem;">
+                        <div class="card-header">
+                            <h3>Order Details</h3>
+                        </div>
+                        <div class="card-body">
+                            ${fullBillDetails.items?.map(item => `
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                    <span>${item.quantity}x ${item.menu_items?.name}</span>
+                                    <span>${formatPrice(item.price_at_time * item.quantity)}</span>
+                                </div>
+                            `).join('')}
+                            <div style="border-top: 1px solid #ffedd5; margin-top: 1rem; padding-top: 1rem; font-weight: bold; display: flex; justify-content: space-between;">
+                                <span>Total</span>
+                                <span style="color: #f97316;">${formatPrice(fullBillDetails.totalAmount)}</span>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <button class="btn btn-primary" style="width: 100%;" onclick="window.renderMenu()">Go to Menu</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        async function renderOrderHistory() {
+            const { data: orders } = await _supabaseClient
+                .from('orders')
+                .select(`*, order_items(*, menu_items(*))`)
+                .eq('user_id', currentUser.id)
+                .order('created_at', { ascending: false });
+
+            const slotSequenceMap = buildSlotSequenceLabelMap(orders || []);
+            
+            const cartCount = cartItems.reduce((s, i) => s + i.quantity, 0);
+            
+            app.innerHTML = `
+                <div class="navbar">
+                    <div class="nav-container">
+                        <div class="nav-content">
+                            <div class="logo" onclick="window.renderMenu()">
+                                <div class="logo-icon">🍽️</div>
+                                <span class="logo-text">Quick Bites</span>
+                            </div>
+                            <div class="nav-links">
+                                <span class="nav-link" onclick="window.renderMenu()">🍔 Menu</span>
+                                <span class="nav-link" onclick="window.renderOrderHistory()">📜 Orders</span>
+                                <span class="nav-link cart-badge" onclick="window.renderCart()">
+                                    🛒 Cart
+                                    <span class="cart-count cart-count-value">${cartCount}</span>
+                                </span>
+                                <button class="btn btn-outline" style="padding: 0.25rem 0.75rem;" onclick="window.handleLogout()">Logout</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="container">
+                    <h1 style="margin-bottom: 1rem;">Order History</h1>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>All Orders</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-container">
+                                <table>
+                                    <thead>
+                                        <tr><th>Order ID</th><th>Items</th><th>Total</th><th>Status</th><th>Token</th><th>Pickup Slot</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        ${orders?.map(order => `
+                                            <tr>
+                                                <td>#${order.id.slice(0, 8)}</td>
+                                                <td>${order.order_items?.map(item => `${item.quantity}x ${item.menu_items?.name}`).join(', ')}</td>
+                                                <td>${formatPrice(order.total_amount)}</td>
+                                                <td><span class="status-badge status-${order.status}">${order.status}</span></td>
+                                                <td>${order.token_number ? `#${order.token_number}` : '-'}</td>
+                                                <td>${getOrderSlotDisplayLabel(order, slotSequenceMap)}</td>
+                                            </tr>
+                                        `).join('') || '<tr><td colspan="6" style="text-align: center;">No orders found</td></tr>'}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        async function renderAdminDashboard() {
+            const { data: orders } = await _supabaseClient
+                .from('orders')
+                .select('*, profiles(name, reg_no), order_items(*, menu_items(*))')
+                .order('created_at', { ascending: false });
+            
+            const { count: usersCount } = await _supabaseClient
+                .from('profiles')
+                .select('*', { count: 'exact', head: true });
+            
+            const totalOrders = orders?.length || 0;
+            const totalRevenue = orders?.reduce((sum, o) => sum + (o.total_amount || 0), 0) || 0;
+            const pendingOrders = orders?.filter(o => o.status === 'pending').length || 0;
+            const tokenSearch = adminTokenSearchQuery.trim().toLowerCase();
+            const filteredOrders = tokenSearch
+                ? (orders || []).filter(order => {
+                    const tokenValue = String(order.token_number || getOrderMeta(order.id).token_number || '').toLowerCase();
+                    return tokenValue.includes(tokenSearch);
+                })
+                : (orders || []);
+            const slotSequenceMap = buildSlotSequenceLabelMap(orders || []);
+            
+            app.innerHTML = `
+                <div class="navbar">
+                    <div class="nav-container">
+                        <div class="nav-content">
+                            <div class="logo" onclick="window.renderAdminDashboard()">
+                                <div class="logo-icon">🍽️</div>
+                                <span class="logo-text">Quick Bites Admin</span>
+                            </div>
+                            <div class="nav-links">
+                                <span class="nav-link" onclick="window.renderAdminDashboard()">📊 Dashboard</span>
+                                <span class="nav-link" onclick="window.renderManageMenu()">📝 Manage Menu</span>
+                                <span class="nav-link" onclick="window.renderManageOrders()">📦 Manage Orders</span>
+                                <button class="btn btn-outline" style="padding: 0.25rem 0.75rem;" onclick="window.handleLogout()">Logout</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="container">
+                    <h1 style="margin-bottom: 1rem;">Admin Dashboard</h1>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card"><div style="font-size: 2rem;">👥</div><h3>${usersCount || 0}</h3><p>Total Users</p></div>
+                        <div class="stat-card"><div style="font-size: 2rem;">📦</div><h3>${totalOrders}</h3><p>Total Orders</p></div>
+                        <div class="stat-card"><div style="font-size: 2rem;">💰</div><h3>${formatPrice(totalRevenue)}</h3><p>Total Revenue</p></div>
+                        <div class="stat-card"><div style="font-size: 2rem;">⏳</div><h3>${pendingOrders}</h3><p>Pending Orders</p></div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header" style="display: flex; gap: 1rem; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+                            <h3>Recent Orders</h3>
+                            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                                <input
+                                    type="text"
+                                    class="form-input"
+                                    style="width: 220px;"
+                                    placeholder="Search token number"
+                                    value="${adminTokenSearchQuery.replace(/"/g, '&quot;')}"
+                                    oninput="window.searchOrdersByToken(this.value)"
+                                >
+                                <button class="btn btn-outline" onclick="window.searchOrdersByToken('')">Clear</button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-container" style="max-height: 65vh; overflow-y: auto;">
+                                <table>
+                                    <thead><tr><th>No.</th><th>Order ID</th><th>Student</th><th>Items</th><th>Total</th><th>Payment Mode</th><th>Token</th><th>Pickup Slot</th><th>Status</th><th>Action</th></tr></thead>
+                                    <tbody>
+                                        ${filteredOrders.map((order, index) => `
+                                            <tr>
+                                                <td>${index + 1}</td>
+                                                <td>#${order.id.slice(0, 8)}</td>
+                                                <td>${order.profiles?.name || 'N/A'}</td>
+                                                <td>${order.order_items?.map(item => `${item.quantity}x ${item.menu_items?.name}`).join(', ')}</td>
+                                                <td>${formatPrice(order.total_amount)}</td>
+                                                <td>${(order.payment_mode || getOrderMeta(order.id).payment_mode || '-').toUpperCase()}</td>
+                                                <td>${order.token_number || getOrderMeta(order.id).token_number || '-'}</td>
+                                                <td>${getOrderSlotDisplayLabel(order, slotSequenceMap)}</td>
+                                                <td><span class="status-badge status-${order.status}">${order.status}</span></td>
+                                                <td>
+                                                    <select class="form-select" style="width: auto; padding: 0.25rem;" onchange="window.updateOrderStatus('${order.id}', this.value)">
+                                                        <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>Pending</option>
+                                                        <option value="confirmed" ${order.status === 'confirmed' ? 'selected' : ''}>Confirmed</option>
+                                                        <option value="preparing" ${order.status === 'preparing' ? 'selected' : ''}>Preparing</option>
+                                                        <option value="ready" ${order.status === 'ready' ? 'selected' : ''}>Ready</option>
+                                                        <option value="completed" ${order.status === 'completed' ? 'selected' : ''}>Completed</option>
+                                                    </select>
+                                                </td>
+                                            </tr>
+                                        `).join('') || '<tr><td colspan="10" style="text-align: center;">No orders found</td></tr>'}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        window.searchOrdersByToken = (query) => {
+            adminTokenSearchQuery = String(query || '');
+            renderAdminDashboard();
+        };
+        
+        window.updateOrderStatus = async (orderId, status) => {
+            const { data: existingOrder } = await _supabaseClient
+                .from('orders')
+                .select('id, token_number, token_generated, slot_id')
+                .eq('id', orderId)
+                .maybeSingle();
+
+            const updatePayload = { status };
+
+            if (status === 'confirmed' && existingOrder && !existingOrder.token_generated) {
+                try {
+                    const generatedToken = await generateSequentialTokenNumber(orderId);
+                    
+                    // Set default collection time if not already set
+                    const collectionTime = existingOrder.collection_time 
+                        ? new Date(existingOrder.collection_time)
+                        : new Date();
+                    if (!existingOrder.collection_time) {
+                        collectionTime.setHours(collectionTime.getHours() + 1);
+                    }
+
+                    updatePayload.token_number = generatedToken;
+                    updatePayload.token_generated = true;
+                    updatePayload.collection_time = collectionTime.toISOString();
+
+                    writeOrderMeta(orderId, {
+                        token_number: generatedToken,
+                        collection_time: collectionTime.toISOString()
+                    });
+                } catch (tokenError) {
+                    showToast('Failed to generate token on confirmation', 'error');
+                    return;
+                }
+            }
+
+            const { error } = await _supabaseClient
+                .from('orders')
+                .update(updatePayload)
+                .eq('id', orderId);
+            
+            if (!error) {
+                showToast('Order status updated', 'success');
+                renderAdminDashboard();
+            }
+        };
+        
+        async function renderManageMenu() {
+            const { data: items } = await _supabaseClient
+                .from('menu_items')
+                .select('*')
+                .order('category');
+            
+            menuItems = items || [];
+            const menuHtml = menuItems.map(item =>
+                '<div class="card">' +
+                    '<img src="' + getMenuImageUrl(item.image_url) + '" data-direct-src="' + escapeHtmlAttr(normalizeImageUrl(item.image_url)) + '" data-alt-proxy-src="' + escapeHtmlAttr(getAltProxiedImageUrl(normalizeImageUrl(item.image_url))) + '" data-retry-step="0" referrerpolicy="no-referrer" class="food-card-img" onerror="window.handleMenuImageError(this)">' +
+                    '<div class="card-body">' +
+                        '<div style="display: flex; justify-content: space-between;">' +
+                            '<h3>' + item.name + '</h3>' +
+                            '<span class="' + (item.is_veg ? 'veg-badge' : 'veg-badge nonveg-badge') + '">' + (item.is_veg ? 'Veg' : 'Non-Veg') + '</span>' +
+                        '</div>' +
+                        '<p style="margin: 0.5rem 0; color:#57534e;">' + (item.description || '') + '</p>' +
+                        '<p style="font-size:1.25rem; font-weight:bold; color:#f97316;">' + formatPrice(item.price) + '</p>' +
+                        '<div style="display: flex; gap: 0.5rem; margin-top: 1rem;">' +
+                            '<button class="btn btn-outline" style="flex:1;" onclick="window.editMenuItem(\'' + item.id + '\')">Edit</button>' +
+                            '<button class="btn btn-danger" style="flex:1;" onclick="window.deleteMenuItem(\'' + item.id + '\')">Delete</button>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>'
+            ).join('');
+            
+            app.innerHTML = `
+                <div class="navbar">
+                    <div class="nav-container">
+                        <div class="nav-content">
+                            <div class="logo" onclick="window.renderAdminDashboard()">
+                                <div class="logo-icon">🍽️</div>
+                                <span class="logo-text">Quick Bites Admin</span>
+                            </div>
+                            <div class="nav-links">
+                                <span class="nav-link" onclick="window.renderAdminDashboard()">📊 Dashboard</span>
+                                <span class="nav-link" onclick="window.renderManageMenu()">📝 Manage Menu</span>
+                                <span class="nav-link" onclick="window.renderManageOrders()">📦 Manage Orders</span>
+                                <button class="btn btn-outline" style="padding: 0.25rem 0.75rem;" onclick="window.handleLogout()">Logout</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="container">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h1>Manage Menu</h1>
+                        <button class="btn btn-primary" onclick="window.showAddMenuItemModal()">+ Add Item</button>
+                    </div>
+                    
+                    <div class="grid grid-3" id="admin-menu-grid">
+                        ${menuHtml}
+                    </div>
+                </div>
+            `;
+        }
+        
+        window.showAddMenuItemModal = () => {
+            showMenuItemModal();
+        };
+        
+        window.editMenuItem = (id) => {
+            const item = menuItems.find(i => i.id === id);
+            if (item) showMenuItemModal(item);
+        };
+        
+        function showMenuItemModal(item = null) {
+            const modal = document.createElement('div');
+            modal.className = 'modal active';
+            modal.id = 'menuItemModal';
+            const itemName = item?.name || '';
+            const itemDescription = item?.description || '';
+            const itemPrice = item?.price || '';
+            const itemCategory = item?.category || '';
+            const itemImageUrl = item?.image_url || '';
+            const itemId = item?.id || '';
+            modal.innerHTML =
+                '<div class="modal-content">' +
+                    '<div class="card-header"><h3>' + (item ? 'Edit Menu Item' : 'Add New Item') + '</h3></div>' +
+                    '<div class="card-body">' +
+                        '<form id="menu-item-form">' +
+                            '<div class="form-group"><label class="form-label">Name</label><input type="text" name="name" class="form-input" value="' + itemName + '" required></div>' +
+                            '<div class="form-group"><label class="form-label">Description</label><textarea name="description" class="form-input" rows="3">' + itemDescription + '</textarea></div>' +
+                            '<div class="form-group"><label class="form-label">Price</label><input type="number" step="0.01" name="price" class="form-input" value="' + itemPrice + '" required></div>' +
+                            '<div class="form-group"><label class="form-label">Category</label><input type="text" name="category" class="form-input" value="' + itemCategory + '" required></div>' +
+                            '<div class="form-group"><label class="form-label">Image URL</label><input type="text" name="image_url" class="form-input" placeholder="https://... or img/food.jpg" value="' + itemImageUrl + '"></div>' +
+                            '<div class="form-group"><label><input type="checkbox" name="is_veg" ' + (item?.is_veg !== false ? 'checked' : '') + '> Vegetarian</label></div>' +
+                            '<div class="form-group"><label><input type="checkbox" name="is_available" ' + (item?.is_available !== false ? 'checked' : '') + '> Available</label></div>' +
+                        '</form>' +
+                    '</div>' +
+                    '<div class="card-footer" style="display: flex; gap: 1rem;">' +
+                        '<button class="btn btn-outline" style="flex:1;" onclick="window.closeMenuItemModal()">Cancel</button>' +
+                        '<button class="btn btn-primary" style="flex:1;" onclick="window.saveMenuItem(\'' + itemId + '\')">Save</button>' +
+                    '</div>' +
+                '</div>';
+            document.body.appendChild(modal);
+        }
+        
+        window.closeMenuItemModal = () => {
+            const modal = document.getElementById('menuItemModal');
+            if (modal) modal.remove();
+        };
+        
+        window.saveMenuItem = async (id) => {
+            const form = document.getElementById('menu-item-form');
+            const formData = new FormData(form);
+            
+            const itemData = {
+                name: formData.get('name'),
+                description: formData.get('description'),
+                price: parseFloat(formData.get('price')),
+                category: formData.get('category'),
+                image_url: normalizeImageUrl(formData.get('image_url')) || null,
+                is_veg: formData.get('is_veg') === 'on',
+                is_available: formData.get('is_available') === 'on'
+            };
+            
+            let error;
+            if (id) {
+                const { error: updateError } = await _supabaseClient
+                    .from('menu_items')
+                    .update(itemData)
+                    .eq('id', id);
+                error = updateError;
+            } else {
+                const { error: insertError } = await _supabaseClient
+                    .from('menu_items')
+                    .insert([itemData]);
+                error = insertError;
+            }
+            
+            if (!error) {
+                window.closeMenuItemModal();
+                showToast(`Item ${id ? 'updated' : 'added'} successfully`, 'success');
+                renderManageMenu();
+            } else {
+                showToast('Failed to save item', 'error');
+            }
+        };
+        
+        window.deleteMenuItem = async (id) => {
+            if (confirm('Are you sure you want to delete this item?')) {
+                const { error } = await _supabaseClient
+                    .from('menu_items')
+                    .delete()
+                    .eq('id', id);
+                
+                if (!error) {
+                    showToast('Item deleted', 'success');
+                    renderManageMenu();
+                }
+            }
+        };
+        
+        async function renderManageOrders() {
+            const { data: orders } = await _supabaseClient
+                .from('orders')
+                .select('*, profiles(name, reg_no), order_items(*, menu_items(*))')
+                .order('created_at', { ascending: false });
+
+            const slotSequenceMap = buildSlotSequenceLabelMap(orders || []);
+            
+            app.innerHTML = `
+                <div class="navbar">
+                    <div class="nav-container">
+                        <div class="nav-content">
+                            <div class="logo" onclick="window.renderAdminDashboard()">
+                                <div class="logo-icon">🍽️</div>
+                                <span class="logo-text">Quick Bites Admin</span>
+                            </div>
+                            <div class="nav-links">
+                                <span class="nav-link" onclick="window.renderAdminDashboard()">📊 Dashboard</span>
+                                <span class="nav-link" onclick="window.renderManageMenu()">📝 Manage Menu</span>
+                                <span class="nav-link" onclick="window.renderManageOrders()">📦 Manage Orders</span>
+                                <button class="btn btn-outline" style="padding: 0.25rem 0.75rem;" onclick="window.handleLogout()">Logout</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="container">
+                    <h1 style="margin-bottom: 1.5rem;">Manage Orders</h1>
+                    
+                    <div class="card">
+                        <div class="card-header"><h3>All Orders</h3></div>
+                        <div class="card-body">
+                            <div class="table-container">
+                                <table>
+                                    <thead><tr><th>No.</th><th>Order ID</th><th>Student</th><th>Reg No</th><th>Items</th><th>Total</th><th>Payment Mode</th><th>Token</th><th>Pickup Slot</th><th>Status</th><th>Action</th></tr></thead>
+                                    <tbody>
+                                        ${orders?.map((order, index) => `
+                                            <tr>
+                                                <td>${index + 1}</td>
+                                                <td>#${order.id.slice(0, 8)}</td>
+                                                <td>${order.profiles?.name || 'N/A'}</td>
+                                                <td>${order.profiles?.reg_no || '-'}</td>
+                                                <td>${order.order_items?.map(item => `${item.quantity}x ${item.menu_items?.name}`).join(', ')}</td>
+                                                <td>${formatPrice(order.total_amount)}</td>
+                                                <td>${(order.payment_mode || getOrderMeta(order.id).payment_mode || '-').toUpperCase()}</td>
+                                                <td>${order.token_number || getOrderMeta(order.id).token_number || '-'}</td>
+                                                <td>${getOrderSlotDisplayLabel(order, slotSequenceMap)}</td>
+                                                <td><span class="status-badge status-${order.status}">${order.status}</span></td>
+                                                <td>
+                                                    <select class="form-select" style="width: auto; padding: 0.25rem;" onchange="window.updateOrderStatus('${order.id}', this.value)">
+                                                        <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>Pending</option>
+                                                        <option value="confirmed" ${order.status === 'confirmed' ? 'selected' : ''}>Confirmed</option>
+                                                        <option value="preparing" ${order.status === 'preparing' ? 'selected' : ''}>Preparing</option>
+                                                        <option value="ready" ${order.status === 'ready' ? 'selected' : ''}>Ready</option>
+                                                        <option value="completed" ${order.status === 'completed' ? 'selected' : ''}>Completed</option>
+                                                    </select>
+                                                </td>
+                                            </tr>
+                                        `).join('') || '<tr><td colspan="11" style="text-align: center;">No orders found</td></tr>'}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Make functions available globally
+        window.renderLanding = renderLanding;
+        window.renderLogin = renderLogin;
+        window.renderSignup = renderSignup;
+        window.renderMenu = renderMenu;
+        window.renderCart = renderCart;
+        window.renderOrderHistory = renderOrderHistory;
+        window.renderAdminDashboard = renderAdminDashboard;
+        window.renderManageMenu = renderManageMenu;
+        window.renderManageOrders = renderManageOrders;
+        window.handleLogin = handleLogin;
+        window.handleSignup = handleSignup;
+        window.handleLogout = handleLogout;
+        window.addToCart = addToCart;
+        window.updateCartQuantity = updateCartQuantity;
+        window.removeFromCart = removeFromCart;
+            window.openRazorpayCheckout = openRazorpayCheckout;
+        
+        // Initialize
+        (async function init() {
+            const { data: { session } } = await _supabaseClient.auth.getSession();
+            if (session) {
+                currentUser = session.user;
+                await fetchUserProfile(currentUser.id);
+                await fetchUserRole(currentUser.id);
+                await loadCart();
+                if (currentRole === 'admin') renderAdminDashboard();
+                else renderMenu();
+            } else {
+                renderLogin();
+            }
+        })();
+    </script>
+</body>
+</html>
