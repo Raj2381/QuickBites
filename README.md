@@ -1,4 +1,4 @@
-# 🍽️ Quick Bites - Smart Canteen System
+# 🍽️ QuickBites - Smart Canteen System
 
 A modern, responsive, and fully-featured Smart Canteen management web application. Quick Bites provides a seamless experience for students/customers to browse the menu, manage their carts, and securely pay online, while offering administrators a powerful dashboard to manage menu items and monitor orders in real-time.
 
